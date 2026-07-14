@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SAFE Post Landing Services — Germany Settlement Portal</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+:root{
+  --nv:#1a2340;--go:#c9a84c;--gl:#f5eacc;--gd:#7a5c10;
+  --bg:#f2f4f9;--sf:#fff;--bd:#dde1ee;--tx:#1a2340;--mu:#6b7a99;
+  --ok:#156b36;--ob:#e6f5ec;--wn:#7a4c00;--wb:#fff6e0;
+  --in:#1a3a8a;--ib:#e6eefb;--er:#8a1a1a;--eb:#fbe6e6
+}
+body{background:var(--bg);color:var(--tx);font-size:13px;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* HEADER */
+.hdr{background:var(--nv);display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:52px;border-bottom:3px solid var(--go);flex-shrink:0}
+.logo{width:34px;height:34px;background:var(--go);border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:var(--nv);margin-right:12px}
+.hdr-t{font-size:15px;font-weight:700;color:#fff}
+.hdr-s{font-size:9px;color:var(--go);letter-spacing:.08em;text-transform:uppercase}
+.hdr-r{font-size:10px;color:rgba(255,255,255,.5);text-align:right}
+.hdr-r b{color:var(--go);display:block;font-size:12px}
+
+/* LAYOUT */
+.shell{display:flex;flex:1;overflow:hidden}
+.sb{width:192px;min-width:192px;background:var(--nv);display:flex;flex-direction:column;overflow-y:auto}
+.sb-sec{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.28);padding:14px 16px 4px}
+.ni{padding:9px 16px;cursor:pointer;color:rgba(255,255,255,.6);font-size:12px;border-left:3px solid transparent;transition:all .15s;user-select:none}
+.ni:hover{background:rgba(255,255,255,.06);color:#fff}
+.ni.on{background:rgba(201,168,76,.15);color:var(--go);border-left-color:var(--go);font-weight:700}
+.sb-foot{margin-top:auto;padding:12px 14px;border-top:1px solid rgba(255,255,255,.08)}
+.cpill{background:rgba(255,255,255,.06);border-radius:6px;padding:10px 12px}
+.cpill .cn{font-size:11px;font-weight:700;color:#fff}
+.cpill .cc{font-size:10px;color:var(--go);margin-top:2px}
+.prog{height:4px;background:rgba(255,255,255,.12);border-radius:2px;overflow:hidden;margin-top:6px}
+.prog-f{height:100%;background:var(--go);border-radius:2px;transition:width .5s}
+.main{flex:1;overflow-y:auto;padding:22px 24px;background:var(--bg)}
+
+/* COMPONENTS */
+.pt{font-size:17px;font-weight:800;color:var(--nv);margin-bottom:3px}
+.ps{font-size:11px;color:var(--mu);margin-bottom:18px}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:16px;margin-bottom:12px}
+.ct{font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--mu);margin-bottom:11px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.fl label{display:block;font-size:9px;font-weight:700;color:var(--mu);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em}
+.fl input,.fl select,.fl textarea{width:100%;border:1px solid var(--bd);border-radius:6px;padding:7px 10px;font-size:12px;color:var(--tx);background:#fff;outline:none;font-family:inherit;transition:border-color .15s}
+.fl input:focus,.fl select:focus,.fl textarea:focus{border-color:var(--go)}
+.fl textarea{resize:vertical;min-height:60px}
+.fl.hi select{border-color:var(--go);font-weight:700}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--bd);background:var(--sf);color:var(--tx);font-family:inherit;transition:all .15s;text-decoration:none;white-space:nowrap}
+.btn:hover{background:var(--bg)}
+.btn-g{background:var(--go);color:var(--nv);border-color:var(--go);font-weight:800}
+.btn-g:hover{filter:brightness(.92)}
+.btn-n{background:var(--nv);color:#fff;border-color:var(--nv)}
+.btn-n:hover{opacity:.85}
+.badge{display:inline-block;font-size:9px;padding:2px 7px;border-radius:12px;font-weight:700;margin-right:3px;margin-bottom:2px}
+.al{border-radius:6px;padding:9px 12px;font-size:11px;margin-bottom:10px;border-left:3px solid;line-height:1.6}
+.al-i{background:var(--ib);color:var(--in);border-color:var(--in)}
+.al-w{background:var(--wb);color:var(--wn);border-color:var(--wn)}
+.al-o{background:var(--ob);color:var(--ok);border-color:var(--ok)}
+.jbox{border-radius:10px;padding:14px;margin-bottom:12px}
+.jbox-pt{background:#fffbeb;border:2px solid #f59e0b}
+.jbox-ft{background:#eff6ff;border:2px solid var(--in)}
+.jbox-t{font-size:13px;font-weight:800;margin-bottom:3px}
+.jbox-s{font-size:10px;margin-bottom:10px}
+.ri{border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:9px;background:var(--sf)}
+.ri.feat{border:2px solid var(--go)}
+.ai-box{background:#f8f9fc;border:1px solid var(--bd);border-radius:6px;padding:12px;font-size:11px;line-height:1.9;color:var(--tx);margin-top:10px;white-space:pre-wrap;font-family:Georgia,serif;display:none}
+.ai-box.show{display:block}
+.ai-lbl{font-size:9px;font-weight:800;color:var(--gd);display:none;align-items:center;gap:4px;margin-top:10px;margin-bottom:3px}
+.ai-lbl.show{display:flex}
+.ai-lbl::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--go);display:inline-block}
+.step{display:flex;gap:11px;margin-bottom:14px}
+.sn{min-width:24px;height:24px;border-radius:50%;background:var(--bg);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--mu);flex-shrink:0}
+.sb2 .st{font-size:12px;font-weight:700;margin-bottom:2px;color:var(--nv)}
+.sb2 .sd{font-size:11px;color:var(--mu);line-height:1.5}
+.metric{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:12px;text-align:center}
+.mv{font-size:26px;font-weight:800;color:var(--nv)}
+.ml{font-size:9px;color:var(--mu);text-transform:uppercase;letter-spacing:.05em}
+.dp{height:5px;background:var(--bg);border-radius:3px;overflow:hidden;margin-top:3px}
+.dp-f{height:100%;background:var(--go);border-radius:3px;transition:width .5s}
+.tr-row{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--bd)}
+.tr-row:last-child{border-bottom:none}
+.up-zone{border:2px dashed var(--bd);border-radius:10px;padding:22px;text-align:center;cursor:pointer;background:#fafbfe;transition:all .2s}
+.up-zone:hover,.up-zone.drag{border-color:var(--go);background:var(--gl)}
+.up-zone.done{border-color:var(--ok);background:var(--ob)}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid var(--bd);border-top-color:var(--go);border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+.big-save{background:var(--go);border-radius:10px;padding:14px;text-align:center;cursor:pointer;margin-bottom:16px;border:none;width:100%;font-family:inherit;transition:filter .15s}
+.big-save:hover{filter:brightness(.92)}
+.big-save .t1{font-size:14px;font-weight:800;color:var(--nv)}
+.big-save .t2{font-size:10px;color:var(--nv);opacity:.7;margin-top:3px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:8px 11px;font-size:9px;font-weight:800;text-transform:uppercase;color:var(--mu);background:var(--bg);border-bottom:1px solid var(--bd)}
+td{padding:8px 11px;font-size:11px;border-bottom:1px solid var(--bd)}
+tr:last-child td{border-bottom:none}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle}
+#toast{position:fixed;bottom:18px;right:18px;background:var(--nv);color:#fff;padding:10px 18px;border-radius:6px;font-size:12px;border-left:3px solid var(--go);opacity:0;transition:opacity .3s;pointer-events:none;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.25)}
+#toast.show{opacity:1}
+
+/* API KEY BANNER */
+#api-banner{background:#1a2340;border-bottom:1px solid #c9a84c;padding:8px 20px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+#api-banner.hidden{display:none}
+#api-banner label{color:#c9a84c;font-size:11px;font-weight:700;white-space:nowrap}
+#api-key-input{flex:1;border:1px solid #c9a84c;background:rgba(255,255,255,.08);color:#fff;border-radius:5px;padding:5px 9px;font-size:12px;outline:none;font-family:inherit}
+#api-key-input::placeholder{color:rgba(255,255,255,.3)}
+</style>
+</head>
+<body>
+
+<div id="api-banner">
+  <label>🔑 Anthropic API Key:</label>
+  <input type="password" id="api-key-input" placeholder="Paste your sk-ant-... key here and press Enter">
+  <button class="btn btn-g" onclick="saveKey()" style="padding:5px 12px;font-size:11px">Save</button>
+  <span style="color:rgba(255,255,255,.4);font-size:10px">Get key at console.anthropic.com · Key stored in your browser only</span>
+</div>
+
+<div class="hdr">
+  <div style="display:flex;align-items:center">
+    <div class="logo">SP</div>
+    <div><div class="hdr-t">SAFE Post Landing Services</div><div class="hdr-s">Germany Settlement Portal · <span id="hdr-city">Select city</span></div></div>
+  </div>
+  <div class="hdr-r"><b id="hdr-name">Enter candidate →</b><span id="hdr-german">No candidate yet</span></div>
+</div>
+
+<div class="shell">
+<div class="sb">
+  <div class="sb-sec">Settlement</div>
+  <div class="ni on" data-page="profile">👤 Profile &amp; Resume</div>
+  <div class="ni" data-page="jobs">💼 Job Matching</div>
+  <div class="ni" data-page="accom">🏠 Accommodation</div>
+  <div class="ni" data-page="bank">💳 Bank Account</div>
+  <div class="sb-sec">Legal &amp; Admin</div>
+  <div class="ni" data-page="anm">📄 Anmeldung</div>
+  <div class="ni" data-page="sim">📱 SIM Card</div>
+  <div class="ni" data-page="tax">🧾 Tax Setup</div>
+  <div class="sb-sec">Overview</div>
+  <div class="ni" data-page="tracker">✅ Tracker</div>
+  <div class="ni" data-page="dash">📊 Dashboard</div>
+  <div class="sb-foot">
+    <div class="cpill">
+      <div class="cn" id="sb-name">No candidate</div>
+      <div class="cc" id="sb-cc">Select city &amp; German level</div>
+      <div style="font-size:9px;color:rgba(255,255,255,.3);margin-top:5px">Settlement <span id="sb-pct">0%</span></div>
+      <div class="prog"><div class="prog-f" id="sb-pf" style="width:0%"></div></div>
+    </div>
+  </div>
+</div>
+<div class="main" id="main"></div>
+</div>
+<div id="toast"></div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────
+const PROF=["Accountant / Finance","Architect","Automotive Technician","Baker / Pastry Chef","Biomedical Engineer","Bus / Tram Driver","Carpenter / Joiner","Chef / Kitchen Staff","Civil Engineer","Cleaner / Housekeeping","Construction Worker","Customer Service","Data Analyst","Delivery / Driver","Dental Technician","Electrical Engineer","Electrician","Environmental Engineer","Event Management","Food Processing Worker","Graphic Designer","Healthcare Assistant","Hotel / Hospitality","HR Professional","IT Support / Helpdesk","Landscape Gardener","Logistics / Supply Chain","Manufacturing Operator","Mechanical Engineer","Medical Doctor","Medical Laboratory Scientist","Nurse / Caregiver","Occupational Therapist","Painter / Decorator","Pharmacist","Physiotherapist","Plumber / Pipefitter","Project Manager","Psychologist","Quality Control Inspector","Radiographer","Retail / Sales","Security Officer","Social Worker","Software Developer","Structural Engineer","Teacher / Tutor","Veterinary Assistant","Warehouse / Logistics","Welder / Metal Worker","Other"];
+const CITIES=["Berlin","Munich","Hamburg","Frankfurt","Cologne","Stuttgart","Düsseldorf","Leipzig","Nuremberg","Dresden","Dortmund","Hannover","Bonn"];
+const BUDS=[["300","Up to €300"],["400","Up to €400"],["500","Up to €500"],["600","Up to €600"],["700","Up to €700"],["800","Up to €800"],["1000","Up to €1,000"],["1200","Up to €1,200"],["1500","No limit"]];
+const CD={
+  Munich:{anm:"https://www.muenchen.de/rathaus/KVR/Buergerbuero.html",spk:"Stadtsparkasse München",areas:["Schwabing","Maxvorstadt","Pasing","Moosach","Milbertshofen","Neuhausen"],major:["BMW","Siemens","MAN","Allianz","Linde"],hostel:"€550–700",wg:"€600–900",studio:"€900–1,400"},
+  Berlin:{anm:"https://service.berlin.de/dienstleistung/120686/",spk:"Berliner Sparkasse",areas:["Mitte","Prenzlauer Berg","Friedrichshain","Kreuzberg","Charlottenburg","Neukölln"],major:["Zalando","SAP","Siemens","Axel Springer","N26"],hostel:"€450–600",wg:"€500–800",studio:"€750–1,100"},
+  Hamburg:{anm:"https://www.hamburg.de/buergeramt/",spk:"Hamburger Sparkasse (HASPA)",areas:["Altona","Eimsbüttel","Barmbek","Wandsbek","St Pauli","Bergedorf"],major:["Airbus","Hapag-Lloyd","OTTO","Beiersdorf","Hamburg Port Authority"],hostel:"€480–620",wg:"€550–820",studio:"€800–1,150"},
+  Frankfurt:{anm:"https://www.frankfurt.de/buergeramt",spk:"Frankfurter Sparkasse",areas:["Sachsenhausen","Bornheim","Nordend","Gallus","Bockenheim","Fechenheim"],major:["Deutsche Bank","Commerzbank","Lufthansa","DZ Bank","Deutsche Bahn"],hostel:"€500–650",wg:"€580–880",studio:"€850–1,250"},
+  Cologne:{anm:"https://www.stadt-koeln.de/buergerbuero",spk:"Sparkasse KölnBonn",areas:["Ehrenfeld","Nippes","Sülz","Deutz","Mülheim","Lindenthal"],major:["Ford","RTL","DHL","Lanxess","Bayer"],hostel:"€430–580",wg:"€520–780",studio:"€750–1,050"},
+  Stuttgart:{anm:"https://www.stuttgart.de/buergerbuero",spk:"Kreissparkasse Stuttgart",areas:["Mitte","Bad Cannstatt","Feuerbach","Vaihingen","Degerloch","Möhringen"],major:["Mercedes-Benz","Porsche","Bosch","Mahle","Trumpf"],hostel:"€470–620",wg:"€560–820",studio:"€800–1,150"},
+  Düsseldorf:{anm:"https://www.duesseldorf.de/buergerbuero",spk:"Stadtsparkasse Düsseldorf",areas:["Derendorf","Pempelfort","Bilk","Flingern","Gerresheim","Benrath"],major:["Henkel","Metro","E.ON","Vodafone Germany","ThyssenKrupp"],hostel:"€450–600",wg:"€530–800",studio:"€780–1,100"},
+  Leipzig:{anm:"https://www.leipzig.de/buergerbuero",spk:"Sparkasse Leipzig",areas:["Lindenau","Gohlis","Connewitz","Plagwitz","Reudnitz","Schönefeld"],major:["BMW Leipzig","DHL Hub","Porsche Leipzig","Amazon","DB Cargo"],hostel:"€350–480",wg:"€380–600",studio:"€550–800"},
+  Nuremberg:{anm:"https://www.nuernberg.de/buergerbuero",spk:"Sparkasse Nürnberg",areas:["Gostenhof","St Johannis","Langwasser","Röthenbach","Schoppershof"],major:["Siemens","MAN","Diehl","Schaeffler","TeamViewer"],hostel:"€380–520",wg:"€420–650",studio:"€600–880"},
+  Dresden:{anm:"https://www.dresden.de/buergerbuero",spk:"Ostsächsische Sparkasse Dresden",areas:["Neustadt","Pieschen","Striesen","Löbtau","Blasewitz"],major:["Infineon","GlobalFoundries","Rolls-Royce","Bosch","T-Systems"],hostel:"€340–460",wg:"€360–560",studio:"€520–750"},
+  Dortmund:{anm:"https://www.dortmund.de/buergerbuero",spk:"Sparkasse Dortmund",areas:["Innenstadt","Hombruch","Hörde","Aplerbeck","Scharnhorst"],major:["ThyssenKrupp","Signal Iduna","Evonik","Deutsche Post","Wilo"],hostel:"€360–490",wg:"€400–600",studio:"€560–800"},
+  Hannover:{anm:"https://www.hannover.de/buergerbuero",spk:"Sparkasse Hannover",areas:["Linden","Südstadt","List","Vahrenwald","Ricklingen"],major:["Continental","TUI","Hannover Re","Volkswagen Commercial","Nord LB"],hostel:"€380–510",wg:"€420–630",studio:"€580–840"},
+  Bonn:{anm:"https://www.bonn.de/buergerbuero",spk:"Kreissparkasse Köln (Bonn)",areas:["Beuel","Bad Godesberg","Hardtberg","Auerberg","Tannenbusch"],major:["Deutsche Telekom","Deutsche Post DHL","UN Campus","SolarWorld","Haribo"],hostel:"€400–540",wg:"€460–700",studio:"€650–920"},
+};
+const TASKS=[
+  {id:"sim",label:"Get German SIM card",done:false},
+  {id:"ac",label:"Secure accommodation",done:false},
+  {id:"ab",label:"Book Anmeldung appointment",done:false},
+  {id:"al",label:"Get Wohnungsgeberbestätigung",done:false},
+  {id:"ad",label:"Complete Anmeldung",done:false},
+  {id:"bk",label:"Open N26 bank account",done:false},
+  {id:"st",label:"Receive Steuer-ID by post",done:false},
+  {id:"j1",label:"Apply to part-time jobs",done:false},
+  {id:"j2",label:"Apply to career jobs",done:false},
+  {id:"j3",label:"Attend interviews",done:false},
+  {id:"ct",label:"Sign employment contract",done:false},
+  {id:"sl",label:"Receive first salary",done:false},
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────
+const S={name:"",dob:"",passport:"",card:"",mobile:"",email:"",city:"Munich",arrival:"",housing:"Need help — SAFE assist",hours:"20",german:"B1",budget:"800",profession:"IT Support / Helpdesk",exp:"3–7",skills:"",bio:"",parsed:false};
+let API_KEY = localStorage.getItem('safe_api_key') || '';
+if(API_KEY){document.getElementById('api-banner').classList.add('hidden');document.getElementById('api-key-input').value=API_KEY;}
+
+function saveKey(){
+  const k=document.getElementById('api-key-input').value.trim();
+  if(!k){toast('Please paste your API key');return;}
+  API_KEY=k;localStorage.setItem('safe_api_key',k);
+  document.getElementById('api-banner').classList.add('hidden');
+  toast('✓ API key saved! All AI features are now active.');
+}
+document.getElementById('api-key-input').addEventListener('keydown',e=>{if(e.key==='Enter')saveKey();});
+
+// ── AI ────────────────────────────────────────────────────────────────
+async function callAI(prompt, outId, lblId) {
+  const out=document.getElementById(outId);
+  const lbl=document.getElementById(lblId);
+  if(!out)return;
+  out.textContent='';out.classList.add('show');
+  if(lbl)lbl.classList.add('show');
+  out.innerHTML='<span class="spin"></span> Generating…';
+
+  if(!API_KEY){
+    out.innerHTML='⚠ Please paste your Anthropic API key in the bar at the top of the page.';
+    return;
+  }
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1200,
+        system:`You are a settlement advisor for SAFE Post Landing Services helping Indian nationals on Germany Opportunity Card (Chancenkarte) settle in Germany. Candidate: ${S.name||'[name]'}, City: ${S.city}, German: ${S.german}, Profession: ${S.profession}, Budget: €${S.budget}/mo. Be practical and specific.`,
+        messages:[{role:'user',content:prompt}]})
+    });
+    const d=await r.json();
+    if(d.error){out.textContent='Error: '+d.error.message;return;}
+    out.textContent=d.content.map(b=>b.text||'').join('');
+  }catch(e){out.textContent='Error: '+e.message;}
+}
+
+async function parseResume(file){
+  const zone=document.getElementById('up-zone');
+  if(!file)return;
+  zone.innerHTML='<span class="spin"></span> Parsing resume with AI…';
+  if(!API_KEY){zone.innerHTML='⚠ Add your API key in the bar above to use resume parsing. Fill fields manually below.';return;}
+  const reader=new FileReader();
+  reader.onload=async(e)=>{
+    const b64=e.target.result.split(',')[1];
+    const pdf=file.name.toLowerCase().endsWith('.pdf');
+    try{
+      let body;
+      if(pdf){body={model:'claude-sonnet-4-6',max_tokens:700,messages:[{role:'user',content:[{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}},{type:'text',text:'Return ONLY valid JSON: {"name":"","profession":"","skills":"","experience":"","bio":""}'}]}]};}
+      else{const t=atob(b64).replace(/[^\x20-\x7E\n]/g,' ').slice(0,4000);body={model:'claude-sonnet-4-6',max_tokens:700,system:'Return ONLY valid JSON.',messages:[{role:'user',content:'Extract resume. Return {"name":"","profession":"","skills":"","experience":"","bio":""}.\n'+t}]};}
+      const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01'},body:JSON.stringify(body)});
+      const d=await r.json();if(d.error)throw new Error(d.error.message);
+      const raw=d.content.map(b=>b.text||'').join('').replace(/```json|```/g,'').trim();
+      const p=JSON.parse(raw);
+      if(p.name)S.name=p.name;
+      if(p.profession&&PROF.includes(p.profession))S.profession=p.profession;
+      if(p.skills)S.skills=p.skills;
+      if(p.experience)S.exp=p.experience;
+      if(p.bio)S.bio=p.bio;
+      S.parsed=true;
+      zone.classList.add('done');
+      zone.innerHTML='✓ Resume parsed — scroll down to review fields';
+      updateHdr();toast('✓ Resume parsed!');nav('profile');
+    }catch(err){zone.innerHTML='⚠ Error: '+err.message;}
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+function copy(id){const el=document.getElementById(id);if(el)navigator.clipboard.writeText(el.textContent).then(()=>toast('Copied!')).catch(()=>toast('Select and copy manually'));}
+function bdg(c,bg,t){return `<span class="badge" style="color:${c};background:${bg}">${t}</span>`;}
+function g(id){return document.getElementById(id)?.value||'';}
+function cd(){return CD[S.city]||CD.Munich;}
+function dl14(){if(!S.arrival)return '14 days after arrival';const d=new Date(new Date(S.arrival).getTime()+14*86400000);return d.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});}
+function estIncome(){return parseInt(S.hours||20)*14;}
+
+function saveProfile(){
+  S.name=g('f-name');S.dob=g('f-dob');S.passport=g('f-pass');S.card=g('f-card');
+  S.mobile=g('f-mob');S.email=g('f-email');S.city=g('f-city');S.arrival=g('f-arr');
+  S.housing=g('f-hous');S.hours=g('f-hrs');S.german=g('f-ger');S.budget=g('f-bud');
+  S.profession=g('f-prof');S.exp=g('f-exp');S.skills=g('f-skills');S.bio=g('f-bio');
+  updateHdr();toast('✓ Profile saved — all sections updated for '+S.city);nav('jobs');
+}
+function updateHdr(){
+  document.getElementById('hdr-name').textContent=S.name||'Enter candidate →';
+  document.getElementById('hdr-city').textContent=S.city;
+  document.getElementById('hdr-german').textContent=S.city+' · '+(S.german==='none'?'No German':S.german)+' German';
+  document.getElementById('sb-name').textContent=S.name||'No candidate';
+  document.getElementById('sb-cc').textContent=S.city+' · '+(S.german==='none'?'No German':S.german);
+  updateProg();
+}
+function updateProg(){
+  const done=TASKS.filter(t=>t.done).length,pct=Math.round(done/TASKS.length*100);
+  document.getElementById('sb-pct').textContent=pct+'%';
+  document.getElementById('sb-pf').style.width=pct+'%';
+}
+
+// ── NAV ───────────────────────────────────────────────────────────────
+function nav(page){
+  document.querySelectorAll('.ni').forEach(n=>n.classList.toggle('on',n.dataset.page===page));
+  const P={profile:rProfile,jobs:rJobs,accom:rAccom,bank:rBank,anm:rAnm,sim:rSim,tax:rTax,tracker:rTracker,dash:rDash};
+  document.getElementById('main').innerHTML=(P[page]||rProfile)();
+  if(page==='profile')initProfile();
+  if(page==='tracker')initTracker();
+}
+document.querySelectorAll('.ni').forEach(n=>n.addEventListener('click',()=>nav(n.dataset.page)));
+
+function initProfile(){
+  const ri=document.getElementById('res-input');
+  if(ri)ri.addEventListener('change',e=>{if(e.target.files[0])parseResume(e.target.files[0]);});
+  const uz=document.getElementById('up-zone');
+  if(uz){
+    uz.addEventListener('dragover',e=>{e.preventDefault();uz.classList.add('drag');});
+    uz.addEventListener('dragleave',()=>uz.classList.remove('drag'));
+    uz.addEventListener('drop',e=>{e.preventDefault();uz.classList.remove('drag');if(e.dataTransfer.files[0])parseResume(e.dataTransfer.files[0]);});
+  }
+}
+function initTracker(){
+  document.querySelectorAll('.task-cb').forEach((cb,i)=>{
+    cb.addEventListener('change',()=>{TASKS[i].done=cb.checked;updateProg();
+      const s=document.getElementById('tr-s'+i);if(s)s.style.textDecoration=cb.checked?'line-through':'none';
+    });
+  });
+}
+
+// ── PAGES ─────────────────────────────────────────────────────────────
+function sel(arr,val,id,hi){return `<select id="${id}" class="fl ${hi?'hi':''}">${arr.map(([v,l])=>`<option value="${v}"${val===v?' selected':''}>${l}</option>`).join('')}</select>`;}
+function profSel(){return `<select id="f-prof" class="hi">${PROF.map(p=>`<option${p===S.profession?' selected':''}>${p}</option>`).join('')}</select>`;}
+function citySel(id,val){return `<select id="${id}">${CITIES.map(c=>`<option${c===val?' selected':''}>${c}</option>`).join('')}</select>`;}
+
+function rProfile(){return `
+<div class="pt">Candidate profile &amp; resume</div>
+<div class="ps">Enter details below — all sections update automatically based on city &amp; German level</div>
+<div class="al al-i" style="margin-bottom:14px">
+  <strong>How to use:</strong> Fill in the candidate details → Click Save → Go to Job Matching → Click Find Jobs buttons for city-specific results.
+</div>
+<div class="card">
+  <div class="ct">Resume upload — AI auto-parse (PDF or Word)</div>
+  <div class="up-zone${S.parsed?' done':''}" id="up-zone" onclick="document.getElementById('res-input').click()">
+    <input type="file" id="res-input" accept=".pdf,.doc,.docx" style="display:none">
+    <div style="font-size:22px;color:var(--mu);margin-bottom:7px">${S.parsed?'✓':'↑'}</div>
+    <div style="font-size:12px;font-weight:700">${S.parsed?'Resume parsed — click to replace':'Click or drag resume (PDF or Word)'}</div>
+    <div style="font-size:10px;color:var(--mu);margin-top:3px">AI extracts name, skills, experience and bio · Or skip and fill manually</div>
+  </div>
+</div>
+<div class="card">
+  <div class="ct">Personal details</div>
+  <div class="g2">
+    <div class="fl"><label>Full name</label><input id="f-name" value="${S.name}" placeholder="e.g. Vikkesh V"></div>
+    <div class="fl"><label>Date of birth</label><input type="date" id="f-dob" value="${S.dob}"></div>
+  </div>
+  <div class="g2">
+    <div class="fl"><label>Passport number</label><input id="f-pass" value="${S.passport}" placeholder="e.g. P1234567"></div>
+    <div class="fl"><label>Opportunity card valid until</label><input type="date" id="f-card" value="${S.card}"></div>
+  </div>
+  <div class="g2">
+    <div class="fl"><label>Mobile (India)</label><input id="f-mob" value="${S.mobile}" placeholder="+91 98765 43210"></div>
+    <div class="fl"><label>Email</label><input type="email" id="f-email" value="${S.email}" placeholder="name@gmail.com"></div>
+  </div>
+</div>
+<div class="card">
+  <div class="ct">Germany details — ⚠ Change these for each candidate</div>
+  <div class="g3">
+    <div class="fl hi"><label>Destination city 🏙</label>${citySel('f-city',S.city)}</div>
+    <div class="fl"><label>Arrival date 📅</label><input type="date" id="f-arr" value="${S.arrival}"></div>
+    <div class="fl"><label>Housing status</label><select id="f-hous"><option>Arranged</option><option${S.housing.includes('SAFE')?' selected':''}>Need help — SAFE assist</option><option>Staying with contacts</option></select></div>
+  </div>
+  <div class="g3">
+    <div class="fl"><label>Max hours/week</label><select id="f-hrs"><option value="10"${S.hours==='10'?' selected':''}>10 hrs</option><option value="20"${S.hours==='20'?' selected':''}>20 hrs</option><option value="25"${S.hours==='25'?' selected':''}>25 hrs</option><option value="30"${S.hours==='30'?' selected':''}>30 hrs</option></select></div>
+    <div class="fl hi"><label>German level 🇩🇪</label><select id="f-ger"><option value="none"${S.german==='none'?' selected':''}>No German</option><option value="A1"${S.german==='A1'?' selected':''}>A1 — Beginner</option><option value="A2"${S.german==='A2'?' selected':''}>A2 — Elementary</option><option value="B1"${S.german==='B1'?' selected':''}>B1 — Intermediate</option><option value="B2"${S.german==='B2'?' selected':''}>B2 — Upper intermediate</option><option value="C1"${S.german==='C1'?' selected':''}>C1 — Advanced</option><option value="C2"${S.german==='C2'?' selected':''}>C2 — Proficient</option></select></div>
+    <div class="fl"><label>Accommodation budget 💰</label>${sel(BUDS,S.budget,'f-bud',false)}</div>
+  </div>
+</div>
+<div class="card">
+  <div class="ct">Profession &amp; skills — drives career job matching</div>
+  <div class="g2">
+    <div class="fl hi"><label>Primary profession</label>${profSel()}</div>
+    <div class="fl"><label>Years experience</label><select id="f-exp"><option>0–1</option><option${S.exp==='1–3'?' selected':''}>1–3</option><option${S.exp==='3–7'?' selected':''}>3–7</option><option${S.exp==='7+'?' selected':''}>7+</option></select></div>
+  </div>
+  <div class="fl" style="margin-bottom:9px"><label>Key skills (comma separated)</label><input id="f-skills" value="${S.skills}" placeholder="e.g. Python, SQL, Helpdesk, Networking"></div>
+  <div class="fl"><label>Short bio for employers</label><textarea id="f-bio">${S.bio}</textarea></div>
+</div>
+<button class="big-save" onclick="saveProfile()">
+  <div class="t1">✅ Save profile &amp; go to Job Matching →</div>
+  <div class="t2">All sections will update for the selected city &amp; German level</div>
+</button>`;}
+
+function rJobs(){const c=cd();const noG=S.german==='none';const lang=(S.german==='none'||S.german==='A1')?'English':'German';
+const ptP=`List 5 real part-time survival jobs in ${S.city}, Germany for someone with ${noG?'no German':S.german+' German'} on Opportunity Card. Basic jobs: warehouse, delivery, kitchen helper, cleaning, retail, security, packing, hospitality. For each: Job title (German & English), Employer type, District in ${S.city}, Distance from ${S.city} centre (km), Pay €/hr, Hours/week, German needed Yes/No, 1-line description. Separate with ---`;
+const ftP=`List 5 career jobs in ${S.city} for: ${S.profession}, ${S.exp} yrs exp, Skills: ${S.skills||'general'}, German: ${S.german}. Match to companies like ${c.major.slice(0,3).join(', ')} in ${S.city}. For each: Job title, Company or type, District in ${S.city}, Distance from centre (km), Salary €/mo or €/hr, Contract type, German required level, 1-line description. Separate with ---`;
+return `
+<div class="pt">Job matching — ${S.city}</div>
+<div class="ps">${S.name||'Candidate'} · ${S.profession} · ${S.city} · German: ${noG?'None':S.german}</div>
+<div class="al al-i">Major employers in ${S.city}: ${c.major.join(', ')}. Jobs sourced from Bundesagentur für Arbeit (BA).</div>
+<div class="jbox jbox-pt">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+    <div>
+      <div class="jbox-t" style="color:#92400e">🛠 Part-time survival jobs — ${S.city}</div>
+      <div class="jbox-s" style="color:#b45309">Any qualification · No German needed for most · Basic income while settling</div>
+    </div>
+    <button class="btn btn-g" onclick="callAI('${ptP.replace(/'/g,"\\'")}','pt-out','pt-lbl')">🔍 Find jobs in ${S.city}</button>
+  </div>
+  <div id="pt-lbl" class="ai-lbl">Part-time jobs — ${S.city}</div>
+  <div id="pt-out" class="ai-box"></div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
+    <button class="btn btn-g" onclick="callAI('Germany-style CV in ${lang} for ${S.name||'candidate'} applying to part-time work in ${S.city}. Profession: ${S.profession}, ${S.exp} yrs, skills: ${S.skills||'reliable and hardworking'}. Email: ${S.email}. German: ${S.german}. Bio: ${S.bio||'Hardworking reliable professional'}. Sections: PERSÖNLICHE DATEN / BERUFSZIEL / BERUFSERFAHRUNG / AUSBILDUNG / KENNTNISSE / SPRACHEN. Focus on availability and reliability. 1-page.','pt-cv-out','pt-cv-lbl')">📄 Build CV for part-time</button>
+    <button class="btn" onclick="callAI('Professional ${lang} cover letter for ${S.name||'candidate'} applying for part-time work in ${S.city}. German: ${S.german}. Chancenkarte. Reliable, available immediately. Max 180 words.','pt-cl-out','pt-cl-lbl')">✉ Cover letter</button>
+    <a href="https://www.arbeitsagentur.de/jobsuche/" target="_blank" class="btn">BA jobs ↗</a>
+  </div>
+  <div id="pt-cv-lbl" class="ai-lbl">CV — Part-time</div>
+  <div id="pt-cv-out" class="ai-box"></div>
+  <div id="pt-cl-lbl" class="ai-lbl">Cover letter — Part-time</div>
+  <div id="pt-cl-out" class="ai-box"></div>
+</div>
+<div class="jbox jbox-ft">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+    <div>
+      <div class="jbox-t" style="color:var(--in)">🎯 Career jobs — ${S.city}</div>
+      <div class="jbox-s" style="color:#2a4aaa">${S.profession} · ${S.exp} yrs experience · Matched to your qualification &amp; skills</div>
+    </div>
+    <button class="btn btn-n" onclick="callAI('${ftP.replace(/'/g,"\\'")}','ft-out','ft-lbl')">🔍 Find ${S.profession} jobs</button>
+  </div>
+  ${noG?'<div class="al al-w">⚠ Most career roles need B1+ German. Apply part-time first while improving German.</div>':''}
+  <div id="ft-lbl" class="ai-lbl">Career jobs — ${S.city}</div>
+  <div id="ft-out" class="ai-box"></div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
+    <button class="btn btn-g" onclick="callAI('Germany-style Lebenslauf in ${lang} for ${S.name||'candidate'} applying to ${S.profession} in ${S.city}. ${S.profession}, ${S.exp} yrs, skills: ${S.skills||'see bio'}. Email: ${S.email}. Mobile: ${S.mobile}. German: ${S.german}. Arriving: ${S.arrival}. Bio: ${S.bio}. Sections: PERSÖNLICHE DATEN / BERUFSZIEL / BERUFSERFAHRUNG / AUSBILDUNG / KENNTNISSE / SPRACHEN. Tailor to ${S.profession} in ${S.city}. 1-page.','ft-cv-out','ft-cv-lbl')">📄 Build Lebenslauf — ${S.profession}</button>
+    <button class="btn" onclick="callAI('Professional ${lang} cover letter for ${S.name||'candidate'} applying to ${S.profession} in ${S.city}. Skills: ${S.skills}. German: ${S.german}. ${S.exp} yrs exp. Chancenkarte arriving ${S.arrival||'soon'}. Max 250 words. ${S.city} and date header.','ft-cl-out','ft-cl-lbl')">✉ Cover letter</button>
+    <a href="https://www.arbeitsagentur.de/jobsuche/" target="_blank" class="btn">BA jobs ↗</a>
+    <a href="https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(S.profession)}&location=${encodeURIComponent(S.city+', Germany')}" target="_blank" class="btn">LinkedIn ↗</a>
+  </div>
+  <div id="ft-cv-lbl" class="ai-lbl">Lebenslauf — ${S.profession}</div>
+  <div id="ft-cv-out" class="ai-box"></div>
+  <div id="ft-cl-lbl" class="ai-lbl">Cover letter — Career</div>
+  <div id="ft-cl-out" class="ai-box"></div>
+</div>`;}
+
+function rAccom(){const c=cd();return `
+<div class="pt">Accommodation — ${S.city}</div>
+<div class="ps">Housing in ${S.city} · Budget €${S.budget}/mo · Arriving ${S.arrival||'TBD'}</div>
+<div class="al al-i">Best areas in ${S.city}: ${c.areas.slice(0,5).join(', ')}. Typical rents — Hostel: ${c.hostel} · WG/Shared: ${c.wg} · Studio: ${c.studio}</div>
+${[
+  {id:'wg',t:`Shared flat (WG) — ${c.areas[0]} / ${c.areas[1]}`,type:'shared',cost:c.wg,km:'2–6',tags:['Bills often included','English-friendly','Furnished'],desc:`Private room in shared flat in ${S.city}. Best areas: ${c.areas.slice(0,4).join(', ')}. Good for meeting people while settling.`,url:'https://www.wg-gesucht.de'},
+  {id:'ho',t:`Worker hostel — ${c.areas[3]||c.areas[2]}`,type:'hostel',cost:c.hostel,km:'5–10',tags:['No German needed','Short-term OK','Flexible'],desc:`Worker hostel in ${S.city}. No long-term commitment. Ideal for first 1–3 months while finding permanent accommodation.`,url:'https://www.hotelscombined.com'},
+  {id:'st',t:`Studio apartment — central ${S.city}`,type:'studio',cost:c.studio,km:'1–4',tags:['Fully private','Central','Furnished'],desc:`Self-contained studio in ${S.city}. Private bathroom and kitchen. Best once income is established.`,url:'https://www.immobilienscout24.de'},
+  {id:'sf',t:`SAFE partner housing — ${S.city}`,type:'partner',cost:c.wg,km:'3–8',tags:['SAFE verified','English contract','Priority booking'],desc:`Pre-arranged rooms via SAFE verified landlords in ${S.city}. English contracts. Priority for SAFE Post Landing candidates.`,url:''},
+].map(a=>`
+<div class="ri${a.type==='partner'?' feat':''}">
+  <div style="font-size:12px;font-weight:700;color:var(--nv);margin-bottom:2px">${a.t}</div>
+  <div style="font-size:10px;color:var(--mu);margin-bottom:6px">📍 ${a.km} km from ${S.city} centre · Available from ${S.arrival||'TBD'}</div>
+  <div style="margin-bottom:7px">${bdg('#7a5c10','#f5eacc',a.cost+'/mo')}${a.tags.map(t=>bdg('#6b7a99','#edf0f7',t)).join('')}</div>
+  <div style="font-size:11px;margin-bottom:8px;line-height:1.5">${a.desc}</div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap">
+    ${a.type==='partner'?'<button class="btn btn-g" onclick="toast(\'Booking request sent to SAFE team!\')">Book via SAFE</button>':''}
+    <button class="btn" onclick="callAI('Formal German rental enquiry for ${S.name||'candidate'}, Indian professional on Chancenkarte, arriving ${S.city} on ${S.arrival||'soon'}. Looking for ${a.type} accommodation. Budget €${S.budget}/mo. Reliable professional, medium-term stay. Under 120 words. Sehr geehrte greeting, Mit freundlichen Grüßen sign-off.','enq-${a.id}','enq-${a.id}-lbl')">✉ German enquiry</button>
+    ${a.url?`<a href="${a.url}" target="_blank" class="btn">Search listings ↗</a>`:''}
+    <button class="btn" onclick="copy('enq-${a.id}')">Copy</button>
+  </div>
+  <div id="enq-${a.id}-lbl" class="ai-lbl">Rental enquiry — German</div>
+  <div id="enq-${a.id}" class="ai-box"></div>
+</div>`).join('')}
+<button class="btn btn-g" style="margin-top:4px" onclick="callAI('Complete housing guide for Indian national on Chancenkarte arriving in ${S.city} on ${S.arrival||'soon'}. Budget €${S.budget}/mo. German: ${S.german}. Best neighbourhoods, rent ranges, what landlords require, tips for Indian nationals, common mistakes, how to find rooms before arrival. Be specific to ${S.city}.','hg-out','hg-lbl')">📋 Get full ${S.city} housing guide</button>
+<div id="hg-lbl" class="ai-lbl">${S.city} housing guide</div>
+<div id="hg-out" class="ai-box"></div>`;}
+
+function rBank(){const c=cd();
+return `
+<div class="pt">Bank account — ${S.city}</div>
+<div class="ps">Opening a German account in ${S.city} — essential for salary, rent and payments</div>
+<div class="al al-w">⚠ Open N26 or Bunq on Day 1 without Anmeldung. Upgrade to ${c.spk} after Anmeldung in ${S.city}.</div>
+<div class="g2">
+${[
+  {id:'n26',nm:'N26',tag:'Open Day 1 — Recommended',tc:'#156b36',tb:'#e6f5ec',anm:false,bd:[['#156b36','#e6f5ec','No Anmeldung'],['#1a3a8a','#e6eefb','Free'],['#6b7a99','#edf0f7','English app']],desc:`Open online in 1–2 days. No Anmeldung needed. IBAN issued instantly. Open the day you arrive in ${S.city}.`,url:'https://n26.com/en-de'},
+  {id:'bq',nm:'Bunq',tag:'Open Day 1 — Alternative',tc:'#1a3a8a',tb:'#e6eefb',anm:false,bd:[['#156b36','#e6f5ec','No Anmeldung'],['#7a4c00','#fff6e0','€3.99/mo']],desc:'Good N26 alternative. EU IBAN accepted everywhere in Germany. More features.',url:'https://www.bunq.com'},
+  {id:'cb',nm:'Commerzbank',tag:'After Anmeldung',tc:'#7a4c00',tb:'#fff6e0',anm:true,bd:[['#7a4c00','#fff6e0','Anmeldung needed'],['#6b7a99','#edf0f7','Free with salary']],desc:`Traditional bank preferred by employers in ${S.city}. Open 1–2 weeks after Anmeldung.`,url:'https://www.commerzbank.de'},
+  {id:'spk',nm:c.spk,tag:'After Anmeldung — Local bank',tc:'#7a4c00',tb:'#fff6e0',anm:true,bd:[['#7a4c00','#fff6e0','Anmeldung needed'],['#156b36','#e6f5ec','Trusted by landlords']],desc:`${c.spk} is the local ${S.city} bank. Landlords and employers prefer it. Significantly helps rental applications.`,url:'https://www.sparkasse.de'},
+].map(b=>`<div class="ri${!b.anm?' feat':''}">
+  ${bdg(b.tc,b.tb,b.tag)}
+  <div style="font-size:12px;font-weight:700;color:var(--nv);margin:5px 0 2px">${b.nm}</div>
+  <div style="margin-bottom:8px">${b.bd.map(([c,bg,l])=>bdg(c,bg,l)).join('')}</div>
+  <div style="font-size:11px;margin-bottom:8px;line-height:1.5">${b.desc}</div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap">
+    <a href="${b.url}" target="_blank" class="btn${!b.anm?' btn-g':''}">Open ${b.nm} ↗</a>
+    <button class="btn" onclick="callAI('Exact documents and steps for ${S.name||'Indian national'} on Chancenkarte to open ${b.nm} in ${S.city}. German: ${S.german}. Numbered list with tips for Indian nationals.','bk-${b.id}','bk-${b.id}-lbl')">What do I need?</button>
+  </div>
+  <div id="bk-${b.id}-lbl" class="ai-lbl">SAFE advisor — ${b.nm}</div>
+  <div id="bk-${b.id}" class="ai-box"></div>
+</div>`).join('')}
+</div>`;}
+
+function rAnm(){const c=cd();return `
+<div class="pt">Anmeldung — ${S.city}</div>
+<div class="ps">Register your address in ${S.city} · Arriving ${S.arrival||'TBD'}</div>
+<div class="al al-w">⚠ Deadline: ${dl14()}. Unlocks Steuer-ID, bank account, and legal residency in ${S.city}.</div>
+<div class="card">
+  <div class="ct">Step-by-step — ${S.city}</div>
+  <div class="step"><div class="sn">1</div><div class="sb2"><div class="st">Secure accommodation in ${S.city}</div><div class="sd">WG room, hostel, or SAFE partner housing qualify. Get Wohnungsgeberbestätigung from your landlord — generate below.</div></div></div>
+  <div class="step"><div class="sn">2</div><div class="sb2">
+    <div class="st">Book Bürgerbüro appointment in ${S.city}</div>
+    <div class="sd">Book immediately on arrival — slots fill 1–3 weeks ahead.</div>
+    <div style="margin-top:8px"><a href="${c.anm}" target="_blank" class="btn btn-n">Book ${S.city} Bürgerbüro ↗</a></div>
+  </div></div>
+  <div class="step"><div class="sn">3</div><div class="sb2">
+    <div class="st">Prepare documents</div>
+    <div class="sd">Passport · Opportunity Card · Wohnungsgeberbestätigung · Anmeldeformular. English staff at ${S.city} offices.</div>
+    <div style="margin-top:8px">
+      <button class="btn btn-g" onclick="callAI('Generate a complete Wohnungsgeberbestätigung for tenant: ${S.name||'[Name]'}, passport: ${S.passport||'[Passport]'}, moving to ${S.city} on ${S.arrival||'[date]'}. Leave blanks for landlord name/address, property address, move-in date, signature, date. Formal German. WOHNUNGSGEBERBESTÄTIGUNG as header. All required legal fields.','lf-out','lf-lbl')">📄 Generate Wohnungsgeberbestätigung</button>
+    </div>
+    <div id="lf-lbl" class="ai-lbl">Wohnungsgeberbestätigung — German</div>
+    <div id="lf-out" class="ai-box"></div>
+    <button class="btn btn-n" style="margin-top:8px;display:none" id="lf-copy" onclick="copy('lf-out')">Copy form</button>
+  </div></div>
+  <div class="step"><div class="sn">4</div><div class="sb2"><div class="st">Attend &amp; receive Anmeldebestätigung</div><div class="sd">10–15 mins at ${S.city} Bürgerbüro. Stamped confirmation same day. Print copies for bank, employer, SIM, and tax.</div></div></div>
+  <div class="step"><div class="sn">5</div><div class="sb2"><div class="st">Steuer-ID arrives by post (2–4 weeks)</div><div class="sd">11-digit Tax ID auto-sent to your ${S.city} address. Required before starting any work.</div></div></div>
+</div>
+<div class="card">
+  <div class="ct">Ask SAFE — ${S.city} Anmeldung questions</div>
+  <textarea id="anm-q" style="width:100%;border:1px solid var(--bd);border-radius:6px;padding:8px;font-size:12px;margin-bottom:8px;min-height:48px;outline:none;font-family:inherit" placeholder="E.g. Can I use a ${S.city} hostel address for Anmeldung? What documents exactly?"></textarea>
+  <button class="btn btn-g" onclick="const q=document.getElementById('anm-q').value;if(q.trim().length>3)callAI('Anmeldung question from ${S.name||'Indian national'} arriving ${S.city} on ${S.arrival||'soon'} on Chancenkarte: '+q+'. Practical answer specific to ${S.city}.','anm-a','anm-a-lbl')">Ask SAFE advisor</button>
+  <div id="anm-a-lbl" class="ai-lbl">SAFE legal advisor</div>
+  <div id="anm-a" class="ai-box"></div>
+</div>`;}
+
+function rSim(){const noG=S.german==='none'||S.german==='A1';return `
+<div class="pt">SIM card — ${S.city}</div>
+<div class="ps">Get a German number on Day 1 — needed for bank, landlords, and employers in ${S.city}</div>
+${noG?'<div class="al al-w">No German/A1 — Lebara recommended: English customer service and free India calls. No German needed to activate.</div>':''}
+<div class="al al-i">All options work without Anmeldung. Get SIM before anything else after landing.</div>
+<div class="g2">
+${[
+  {nm:'Aldi Talk',tag:'Recommended · Buy at airport',tc:'#156b36',tb:'#e6f5ec',f:true,desc:`Available at Aldi in ${S.city} airport and main station. Activate with passport. Number ready within 1 hour of landing.`,url:'https://www.alditalk.de',bd:[['#7a5c10','#f5eacc','€10 starter'],['#1a3a8a','#e6eefb','15GB'],['#156b36','#e6f5ec','No contract']]},
+  {nm:'Lebara',tag:noG?'⭐ Best — No German needed':'Best for India calls',tc:'#1a3a8a',tb:'#e6eefb',f:noG,desc:'Free calls to India every month. English customer service. Popular with Indian community in Germany.',url:'https://www.lebara.de',bd:[['#7a5c10','#f5eacc','€5 starter'],['#156b36','#e6f5ec','Free India calls'],['#156b36','#e6f5ec','English support']]},
+  {nm:'Congstar',tag:'Mid-range option',tc:'#6b7a99',tb:'#edf0f7',f:false,desc:'Good value prepaid. English support. Upgrade to contract later once settled.',url:'https://www.congstar.de',bd:[['#7a4c00','#fff6e0','€8–15/mo'],['#1a3a8a','#e6eefb','20GB+'],['#156b36','#e6f5ec','No Anmeldung']]},
+  {nm:'O2 Germany',tag:'Contract — after settling',tc:'#6b7a99',tb:'#edf0f7',f:false,desc:'Better value long-term. Need bank account and Anmeldung first.',url:'https://www.o2online.de',bd:[['#7a4c00','#fff6e0','Contract needed'],['#6b7a99','#edf0f7','€10+/mo'],['#1a3a8a','#e6eefb','40GB+']]},
+].map(s=>`<div class="ri${s.f?' feat':''}">
+  ${bdg(s.tc,s.tb,s.tag)}
+  <div style="font-size:12px;font-weight:700;color:var(--nv);margin:5px 0 2px">${s.nm}</div>
+  <div style="margin-bottom:8px">${s.bd.map(([c,bg,l])=>bdg(c,bg,l)).join('')}</div>
+  <div style="font-size:11px;margin-bottom:8px;line-height:1.5">${s.desc}</div>
+  <a href="${s.url}" target="_blank" class="btn${s.f?' btn-g':''}">Get ${s.nm} ↗</a>
+</div>`).join('')}
+</div>
+<div class="card">
+  <div class="ct">Day 1 arrival checklist — ${S.city}</div>
+  <div style="font-size:11px;line-height:2.5">
+    <div>📍 Find Aldi or Rewe at ${S.city} airport / Hauptbahnhof (main station)</div>
+    <div>💳 Buy Aldi Talk starter pack — €10 cash or card</div>
+    <div>📱 Activate at alditalk.de with passport scan</div>
+    <div>✅ German number active within 60 minutes of landing</div>
+    <div>💬 WhatsApp new number to SAFE team immediately: +91-9886181839</div>
+  </div>
+</div>`;}
+
+function rTax(){const est=estIncome();const mini=est<=538;const c=cd();return `
+<div class="pt">Tax setup — ${S.city}</div>
+<div class="ps">Tax registration for work in ${S.city} under the Chancenkarte</div>
+<div class="al al-o">✓ Steuer-ID issued automatically after Anmeldung in ${S.city}. Arrives by post in 2–4 weeks. No separate application.</div>
+${mini?`<div class="al al-i">ℹ At ${S.hours} hrs/week, estimated income ~€${est}/mo — qualifies as Minijob (under €538/mo). ZERO income tax and ZERO social contributions!</div>`:''}
+<div class="card">
+  <div class="ct">Step-by-step tax setup — ${S.city}</div>
+  <div class="step"><div class="sn">1</div><div class="sb2"><div class="st">Complete Anmeldung in ${S.city} first</div><div class="sd">Finanzamt in ${S.city} auto-issues Steuer-ID once address is registered. No extra application.</div></div></div>
+  <div class="step"><div class="sn">2</div><div class="sb2"><div class="st">Receive Steuer-ID by post (2–4 weeks)</div><div class="sd">11-digit number to your ${S.city} address. If lost, retrieve at bzst.de.</div></div></div>
+  <div class="step"><div class="sn">3</div><div class="sb2"><div class="st">Give Steuer-ID to employer on Day 1 of work</div><div class="sd">Employer registers in ELSTER. Tax deducted automatically. Nothing else needed from you.</div></div></div>
+  <div class="step"><div class="sn">4</div><div class="sb2">
+    <div class="st">Annual tax return — usually a refund</div>
+    <div class="sd">Part-time Chancenkarte workers in ${S.city} frequently get money back.</div>
+    <div style="display:flex;gap:6px;margin-top:7px"><a href="https://www.elster.de" target="_blank" class="btn btn-n">ELSTER (free) →</a><a href="https://www.taxfix.de" target="_blank" class="btn">Taxfix (English) →</a></div>
+  </div></div>
+</div>
+<div class="card">
+  <div class="ct">Key rules for Chancenkarte holders in ${S.city}</div>
+  <div style="font-size:11px;line-height:2.4">
+    <div><strong>Steuerklasse I</strong> — single, no children. Default for most Chancenkarte holders. ${mini?'✅ Applies here.':''}</div>
+    <div><strong>Minijob (under €538/mo)</strong> — zero income tax and zero social contributions. ${mini?'✅ This candidate qualifies!':''}</div>
+    <div><strong>Steuernummer</strong> — only needed for freelance work alongside employment.</div>
+    <div><strong>Lohnsteuer</strong> — employer deducts automatically via ELSTER. No action needed.</div>
+    <div><strong>India–Germany DTA</strong> — prevents double taxation in both countries.</div>
+  </div>
+  <div style="margin-top:12px">
+    <button class="btn btn-g" onclick="callAI('German tax advice for ${S.name||'Indian national'} in ${S.city} on Chancenkarte. ${S.profession}, ${S.hours} hrs/week (~€${est}/mo). German: ${S.german}. Cover: Steuer-ID process in ${S.city}, Steuerklasse, Minijob rules, Lohnsteuer, Steuererklärung filing, India-Germany DTA benefits. Specific to ${S.city}.','tax-out','tax-lbl')">Get personalised tax advice for ${S.city}</button>
+    <div id="tax-lbl" class="ai-lbl">SAFE tax advisor</div>
+    <div id="tax-out" class="ai-box"></div>
+  </div>
+</div>`;}
+
+function rTracker(){const done=TASKS.filter(t=>t.done).length,pct=Math.round(done/TASKS.length*100);return `
+<div class="pt">Settlement tracker — ${S.city}</div>
+<div class="ps">${S.name||'Candidate'} · ${S.city} · Arriving ${S.arrival||'TBD'} · ${done} of ${TASKS.length} complete</div>
+<div class="card" style="margin-bottom:12px">
+  <div style="display:flex;justify-content:space-between;margin-bottom:6px"><div style="font-size:12px;font-weight:700">Settlement progress</div><div style="font-size:12px;font-weight:700;color:var(--go)">${pct}%</div></div>
+  <div class="dp" style="height:10px;border-radius:5px"><div class="dp-f" style="width:${pct}%;border-radius:5px"></div></div>
+</div>
+<div class="card">
+${TASKS.map((t,i)=>`<div class="tr-row"><input type="checkbox" class="task-cb"${t.done?' checked':''} style="accent-color:var(--go);cursor:pointer;width:16px;height:16px"><span id="tr-s${i}" style="flex:1;font-size:12px;${t.done?'text-decoration:line-through;color:var(--mu)':''}">${t.label}</span></div>`).join('')}
+</div>
+<button class="btn btn-g" onclick="callAI('Week-by-week settlement timeline for ${S.name||'candidate'} arriving ${S.city} on ${S.arrival||'soon'} on Chancenkarte. ${S.profession}, German: ${S.german}, Budget: €${S.budget}/mo. Done: ${TASKS.filter(t=>t.done).map(t=>t.label).join(', ')||'none'}. Pending: ${TASKS.filter(t=>!t.done).map(t=>t.label).join(', ')}. Day-by-day for first 2 weeks in ${S.city}, weekly for 3 months. Include specific ${S.city} addresses and tips.','tr-out','tr-lbl')">📅 Get AI timeline for ${S.city}</button>
+<div id="tr-lbl" class="ai-lbl">Settlement timeline — ${S.city}</div>
+<div id="tr-out" class="ai-box"></div>`;}
+
+function rDash(){return `
+<div class="pt">Dashboard</div>
+<div class="ps">SAFE Post Landing Services · Programme overview</div>
+<div class="g4">
+${[['24','Active candidates'],['87','Applications sent'],['11','Jobs secured'],['18','Anmeldung done']].map(([v,l])=>`<div class="metric"><div class="mv">${v}</div><div class="ml">${l}</div></div>`).join('')}
+</div>
+<div class="card" style="margin-bottom:12px">
+  <div class="ct">Settlement completion by city</div>
+  ${[['Berlin',92],['Hamburg',75],['Munich',42],['Frankfurt',15]].map(([c,p])=>`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:11px">${c}</span><span style="font-size:10px;color:var(--mu)">${p}%</span></div><div class="dp"><div class="dp-f" style="width:${p}%"></div></div></div>`).join('')}
+</div>
+<button class="btn btn-g" onclick="callAI('Professional monthly report for SAFE Post Landing Services. Stats: 24 candidates, 87 applications, 11 jobs secured, 18 Anmeldung done. Cities: Berlin 92%, Hamburg 75%, Munich 42%, Frankfurt 15% settlement. Part-time and career jobs both tracked. Executive summary, key metrics, blockers, 3 recommendations. Addressed to Sandeep Kumar N, Founder.','dash-out','dash-lbl')">📊 Generate monthly report</button>
+<div id="dash-lbl" class="ai-lbl">Monthly report</div>
+<div id="dash-out" class="ai-box"></div>`;}
+
+// ── INIT ──────────────────────────────────────────────────────────────
+nav('profile');
+</script>
+</body>
+</html>
