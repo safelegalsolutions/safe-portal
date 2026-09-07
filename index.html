@@ -218,15 +218,18 @@ async function callAI(prompt, outId, lblId) {
   try{
     const r=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01'},
+      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1200,
         system:`You are a settlement advisor for SAFE Post Landing Services helping Indian nationals on Germany Opportunity Card (Chancenkarte) settle in Germany. Candidate: ${S.name||'[name]'}, City: ${S.city}, German: ${S.german}, Profession: ${S.profession}, Budget: €${S.budget}/mo. Be practical and specific.`,
         messages:[{role:'user',content:prompt}]})
     });
     const d=await r.json();
+    if(!r.ok){out.textContent='Error: '+(d.error?.message||('HTTP '+r.status));return;}
     if(d.error){out.textContent='Error: '+d.error.message;return;}
     out.textContent=d.content.map(b=>b.text||'').join('');
-  }catch(e){out.textContent='Error: '+e.message;}
+  }catch(e){
+    out.textContent='Error: '+e.message+' — if this says "NetworkError" or "Failed to fetch", check that your API key is correct and that your browser/network isn\'t blocking api.anthropic.com (ad blockers and some corporate networks do).';
+  }
 }
 
 async function parseResume(file){
@@ -242,8 +245,10 @@ async function parseResume(file){
       let body;
       if(pdf){body={model:'claude-sonnet-4-6',max_tokens:700,messages:[{role:'user',content:[{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}},{type:'text',text:'Return ONLY valid JSON: {"name":"","profession":"","skills":"","experience":"","bio":""}'}]}]};}
       else{const t=atob(b64).replace(/[^\x20-\x7E\n]/g,' ').slice(0,4000);body={model:'claude-sonnet-4-6',max_tokens:700,system:'Return ONLY valid JSON.',messages:[{role:'user',content:'Extract resume. Return {"name":"","profession":"","skills":"","experience":"","bio":""}.\n'+t}]};}
-      const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01'},body:JSON.stringify(body)});
-      const d=await r.json();if(d.error)throw new Error(d.error.message);
+      const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify(body)});
+      const d=await r.json();
+      if(!r.ok)throw new Error(d.error?.message||('HTTP '+r.status));
+      if(d.error)throw new Error(d.error.message);
       const raw=d.content.map(b=>b.text||'').join('').replace(/```json|```/g,'').trim();
       const p=JSON.parse(raw);
       if(p.name)S.name=p.name;
@@ -255,7 +260,7 @@ async function parseResume(file){
       zone.classList.add('done');
       zone.innerHTML='✓ Resume parsed — scroll down to review fields';
       updateHdr();toast('✓ Resume parsed!');nav('profile');
-    }catch(err){zone.innerHTML='⚠ Error: '+err.message;}
+    }catch(err){zone.innerHTML='⚠ Error: '+err.message+' — you can still fill the fields below manually.';}
   };
   reader.readAsDataURL(file);
 }
