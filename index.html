@@ -73,6 +73,8 @@ body{background:var(--bg);color:var(--tx);font-size:13px;height:100vh;display:fl
 .ai-lbl{font-size:9px;font-weight:800;color:var(--gd);display:none;align-items:center;gap:4px;margin-top:10px;margin-bottom:3px}
 .ai-lbl.show{display:flex}
 .ai-lbl::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--go);display:inline-block}
+.ai-lbl.live::before{background:#1a8a4a;animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .step{display:flex;gap:11px;margin-bottom:14px}
 .sn{min-width:24px;height:24px;border-radius:50%;background:var(--bg);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--mu);flex-shrink:0}
 .sb2 .st{font-size:12px;font-weight:700;margin-bottom:2px;color:var(--nv)}
@@ -115,7 +117,7 @@ tr:last-child td{border-bottom:none}
   <label>🔑 Anthropic API Key:</label>
   <input type="password" id="api-key-input" placeholder="Paste your sk-ant-... key here and press Enter">
   <button class="btn btn-g" onclick="saveKey()" style="padding:5px 12px;font-size:11px">Save</button>
-  <span style="color:rgba(255,255,255,.4);font-size:10px">Get key at console.anthropic.com · Key stored in your browser only</span>
+  <span style="color:rgba(255,255,255,.4);font-size:10px">Get key at console.anthropic.com · Web Search must be enabled on the key for live job/housing lookup · Key stored in your browser only</span>
 </div>
 
 <div class="hdr">
@@ -203,30 +205,56 @@ function saveKey(){
 document.getElementById('api-key-input').addEventListener('keydown',e=>{if(e.key==='Enter')saveKey();});
 
 // ── AI ────────────────────────────────────────────────────────────────
-async function callAI(prompt, outId, lblId) {
+// opts: { search:boolean  -> enables live web search grounding for real, current, verifiable results
+//         maxTokens:number }
+async function callAI(prompt, outId, lblId, opts) {
+  opts = opts || {};
+  const useSearch = !!opts.search;
+  const maxTokens = opts.maxTokens || 1200;
   const out=document.getElementById(outId);
   const lbl=document.getElementById(lblId);
   if(!out)return;
   out.textContent='';out.classList.add('show');
-  if(lbl)lbl.classList.add('show');
-  out.innerHTML='<span class="spin"></span> Generating…';
+  if(lbl){lbl.classList.add('show');lbl.classList.toggle('live',useSearch);}
+  out.innerHTML = useSearch
+    ? '<span class="spin"></span> Searching the live web for current, verified listings — this can take 15–30s…'
+    : '<span class="spin"></span> Generating…';
 
   if(!API_KEY){
     out.innerHTML='⚠ Please paste your Anthropic API key in the bar at the top of the page.';
     return;
   }
   try{
+    const today = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+    const groundingRules = useSearch ? ` You have live web search — use it now to find CURRENT, REAL, VERIFIABLE information for ${S.city}, Germany. Today's date is ${today}.
+STRICT RULES — FOLLOW EXACTLY:
+1. Every phone number, WhatsApp number, email address, or named contact person you output MUST be copied directly from a search result you actually retrieved. NEVER invent, guess, autocomplete, or pattern-generate a contact detail. This is a hard rule with zero exceptions.
+2. If you cannot find a real, currently-active contact for something, say so plainly in the output ("No verified direct contact found — use this portal/link instead: ...") rather than inventing one.
+3. Prefer sources that look currently active (recent posting dates, "available now/from [date]", live pricing) over anything that looks outdated or expired.
+4. Individual private listings on WG-Gesucht / ImmoScout24 / Kleinanzeigen / Indeed change within days — do not quote a specific private listing as a fixed fact. Instead, either (a) find a stable company/organisation with a persistent real contact (an agency, employer, staffing firm, official portal), or (b) tell the user to search live on the named portal with a direct link.
+5. At the end of your answer, add a line "Sources:" followed by the real URLs you used.
+6. Be honest about uncertainty — a shorter, accurate answer is much better than a longer one with invented details.` : '';
+    const body = {
+      model:'claude-sonnet-4-6',
+      max_tokens: maxTokens,
+      system:`You are a settlement advisor for SAFE Post Landing Services helping Indian nationals on Germany Opportunity Card (Chancenkarte) settle in Germany. Candidate: ${S.name||'[name]'}, City: ${S.city}, German: ${S.german}, Profession: ${S.profession}, Budget: €${S.budget}/mo.${groundingRules} Be practical and specific.`,
+      messages:[{role:'user',content:prompt}]
+    };
+    if(useSearch){
+      body.tools = [{type:'web_search_20250305', name:'web_search', max_uses:6}];
+    }
     const r=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1200,
-        system:`You are a settlement advisor for SAFE Post Landing Services helping Indian nationals on Germany Opportunity Card (Chancenkarte) settle in Germany. Candidate: ${S.name||'[name]'}, City: ${S.city}, German: ${S.german}, Profession: ${S.profession}, Budget: €${S.budget}/mo. Be practical and specific.`,
-        messages:[{role:'user',content:prompt}]})
+      body:JSON.stringify(body)
     });
     const d=await r.json();
-    if(!r.ok){out.textContent='Error: '+(d.error?.message||('HTTP '+r.status));return;}
+    if(!r.ok){out.textContent='Error: '+(d.error?.message||('HTTP '+r.status))+(useSearch?' — note: your API key/plan needs Web Search enabled for live lookups (console.anthropic.com → Settings).':'');return;}
     if(d.error){out.textContent='Error: '+d.error.message;return;}
-    out.textContent=d.content.map(b=>b.text||'').join('');
+    // Response may contain text blocks plus server_tool_use / web_search_tool_result blocks — only render text blocks.
+    const textBlocks = d.content.filter(b=>b.type==='text');
+    const combined = textBlocks.map(b=>b.text||'').join('\n').trim();
+    out.textContent = combined || '(No text returned — try again, or rephrase.)';
   }catch(e){
     out.textContent='Error: '+e.message+' — if this says "NetworkError" or "Failed to fetch", check that your API key is correct and that your browser/network isn\'t blocking api.anthropic.com (ad blockers and some corporate networks do).';
   }
@@ -273,6 +301,7 @@ function g(id){return document.getElementById(id)?.value||'';}
 function cd(){return CD[S.city]||CD.Munich;}
 function dl14(){if(!S.arrival)return '14 days after arrival';const d=new Date(new Date(S.arrival).getTime()+14*86400000);return d.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});}
 function estIncome(){return parseInt(S.hours||20)*14;}
+function esc(s){return (s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,' ');}
 
 function saveProfile(){
   S.name=g('f-name');S.dob=g('f-dob');S.passport=g('f-pass');S.card=g('f-card');
@@ -332,7 +361,7 @@ function rProfile(){return `
 <div class="pt">Candidate profile &amp; resume</div>
 <div class="ps">Enter details below — all sections update automatically based on city &amp; German level</div>
 <div class="al al-i" style="margin-bottom:14px">
-  <strong>How to use:</strong> Fill in the candidate details → Click Save → Go to Job Matching → Click Find Jobs buttons for city-specific results.
+  <strong>How to use:</strong> Fill in the candidate details → Click Save → Go to Job Matching or Accommodation → Click the live search buttons for real, current, city-specific results with verified contact details.
 </div>
 <div class="card">
   <div class="ct">Resume upload — AI auto-parse (PDF or Word)</div>
@@ -386,26 +415,25 @@ function rProfile(){return `
 </button>`;}
 
 function rJobs(){const c=cd();const noG=S.german==='none';const lang=(S.german==='none'||S.german==='A1')?'English':'German';
-const ptP=`List 5 real part-time survival jobs in ${S.city}, Germany for someone with ${noG?'no German':S.german+' German'} on Opportunity Card. Basic jobs: warehouse, delivery, kitchen helper, cleaning, retail, security, packing, hospitality. For each: Job title (German & English), Employer type, District in ${S.city}, Distance from ${S.city} centre (km), Pay €/hr, Hours/week, German needed Yes/No, 1-line description, How to apply (name the exact portal/channel — e.g. BA Jobbörse (arbeitsagentur.de) search term, employer's own careers page, Indeed.de search term, or walk-in for retail/hospitality — do NOT invent a phone number, email address or named contact person). Separate with ---`;
-const ftP=`List 5 career jobs in ${S.city} for: ${S.profession}, ${S.exp} yrs exp, Skills: ${S.skills||'general'}, German: ${S.german}. Match to companies like ${c.major.slice(0,3).join(', ')} in ${S.city}. For each: Job title, Company or type, District in ${S.city}, Distance from centre (km), Salary €/mo or €/hr, Contract type, German required level, 1-line description, How to apply (name the exact portal/channel — e.g. company's official careers page URL pattern, LinkedIn Jobs search term, BA Jobbörse, Xing — do NOT invent a phone number, email address or named contact person). Separate with ---`;
 return `
 <div class="pt">Job matching — ${S.city}</div>
 <div class="ps">${S.name||'Candidate'} · ${S.profession} · ${S.city} · German: ${noG?'None':S.german}</div>
-<div class="al al-i">Major employers in ${S.city}: ${c.major.join(', ')}. Jobs sourced from Bundesagentur für Arbeit (BA).</div>
+<div class="al al-i">Major employers in ${S.city}: ${c.major.join(', ')}. Live search checks the Bundesagentur für Arbeit (BA) Jobbörse, staffing agencies, and company career pages for ${S.city} right now.</div>
 <div class="jbox jbox-pt">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
     <div>
       <div class="jbox-t" style="color:#92400e">🛠 Part-time survival jobs — ${S.city}</div>
-      <div class="jbox-s" style="color:#b45309">Any qualification · No German needed for most · Basic income while settling</div>
+      <div class="jbox-s" style="color:#b45309">Live web search · Any qualification · No German needed for most · Real application links only</div>
     </div>
-    <button class="btn btn-g" onclick="callAI('${ptP.replace(/'/g,"\\'")}','pt-out','pt-lbl')">🔍 Find jobs in ${S.city}</button>
+    <button class="btn btn-g" onclick="findPartTimeJobs()">🔍 Search live jobs in ${S.city}</button>
   </div>
-  <div id="pt-lbl" class="ai-lbl">Part-time jobs — ${S.city}</div>
+  <div id="pt-lbl" class="ai-lbl">Part-time jobs — ${S.city} (live search)</div>
   <div id="pt-out" class="ai-box"></div>
+  <div class="al al-o" style="margin-top:6px;margin-bottom:0">☎ Official free hotline — Bundesagentur für Arbeit: <strong>0800 4 5555 00</strong> (Mon–Thu 8:00–18:00, Fri 8:00–14:00) — real, government, verified.</div>
   <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
-    <button class="btn btn-g" onclick="callAI('Germany-style CV in ${lang} for ${S.name||'candidate'} applying to part-time work in ${S.city}. Profession: ${S.profession}, ${S.exp} yrs, skills: ${S.skills||'reliable and hardworking'}. Email: ${S.email}. German: ${S.german}. Bio: ${S.bio||'Hardworking reliable professional'}. Sections: PERSÖNLICHE DATEN / BERUFSZIEL / BERUFSERFAHRUNG / AUSBILDUNG / KENNTNISSE / SPRACHEN. Focus on availability and reliability. 1-page.','pt-cv-out','pt-cv-lbl')">📄 Build CV for part-time</button>
-    <button class="btn" onclick="callAI('Professional ${lang} cover letter for ${S.name||'candidate'} applying for part-time work in ${S.city}. German: ${S.german}. Chancenkarte. Reliable, available immediately. Max 180 words.','pt-cl-out','pt-cl-lbl')">✉ Cover letter</button>
-    <a href="https://www.arbeitsagentur.de/jobsuche/" target="_blank" class="btn">BA jobs ↗</a>
+    <button class="btn btn-g" onclick="callAI('Germany-style CV in ${lang} for ${esc(S.name)||'candidate'} applying to part-time work in ${S.city}. Profession: ${S.profession}, ${S.exp} yrs, skills: ${esc(S.skills)||'reliable and hardworking'}. Email: ${S.email}. German: ${S.german}. Bio: ${esc(S.bio)||'Hardworking reliable professional'}. Sections: PERSÖNLICHE DATEN / BERUFSZIEL / BERUFSERFAHRUNG / AUSBILDUNG / KENNTNISSE / SPRACHEN. Focus on availability and reliability. 1-page.','pt-cv-out','pt-cv-lbl')">📄 Build CV for part-time</button>
+    <button class="btn" onclick="callAI('Professional ${lang} cover letter for ${esc(S.name)||'candidate'} applying for part-time work in ${S.city}. German: ${S.german}. Chancenkarte. Reliable, available immediately. Max 180 words.','pt-cl-out','pt-cl-lbl')">✉ Cover letter</button>
+    <a href="https://www.arbeitsagentur.de/jobsuche/" target="_blank" class="btn">BA Jobbörse ↗</a>
   </div>
   <div id="pt-cv-lbl" class="ai-lbl">CV — Part-time</div>
   <div id="pt-cv-out" class="ai-box"></div>
@@ -416,52 +444,84 @@ return `
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
     <div>
       <div class="jbox-t" style="color:var(--in)">🎯 Career jobs — ${S.city}</div>
-      <div class="jbox-s" style="color:#2a4aaa">${S.profession} · ${S.exp} yrs experience · Matched to your qualification &amp; skills</div>
+      <div class="jbox-s" style="color:#2a4aaa">Live web search · ${S.profession} · ${S.exp} yrs experience · Real application links only</div>
     </div>
-    <button class="btn btn-n" onclick="callAI('${ftP.replace(/'/g,"\\'")}','ft-out','ft-lbl')">🔍 Find ${S.profession} jobs</button>
+    <button class="btn btn-n" onclick="findCareerJobs()">🔍 Search live ${S.profession} jobs</button>
   </div>
   ${noG?'<div class="al al-w">⚠ Most career roles need B1+ German. Apply part-time first while improving German.</div>':''}
-  <div id="ft-lbl" class="ai-lbl">Career jobs — ${S.city}</div>
+  <div id="ft-lbl" class="ai-lbl">Career jobs — ${S.city} (live search)</div>
   <div id="ft-out" class="ai-box"></div>
   <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
-    <button class="btn btn-g" onclick="callAI('Germany-style Lebenslauf in ${lang} for ${S.name||'candidate'} applying to ${S.profession} in ${S.city}. ${S.profession}, ${S.exp} yrs, skills: ${S.skills||'see bio'}. Email: ${S.email}. Mobile: ${S.mobile}. German: ${S.german}. Arriving: ${S.arrival}. Bio: ${S.bio}. Sections: PERSÖNLICHE DATEN / BERUFSZIEL / BERUFSERFAHRUNG / AUSBILDUNG / KENNTNISSE / SPRACHEN. Tailor to ${S.profession} in ${S.city}. 1-page.','ft-cv-out','ft-cv-lbl')">📄 Build Lebenslauf — ${S.profession}</button>
-    <button class="btn" onclick="callAI('Professional ${lang} cover letter for ${S.name||'candidate'} applying to ${S.profession} in ${S.city}. Skills: ${S.skills}. German: ${S.german}. ${S.exp} yrs exp. Chancenkarte arriving ${S.arrival||'soon'}. Max 250 words. ${S.city} and date header.','ft-cl-out','ft-cl-lbl')">✉ Cover letter</button>
-    <a href="https://www.arbeitsagentur.de/jobsuche/" target="_blank" class="btn">BA jobs ↗</a>
+    <button class="btn btn-g" onclick="callAI('Germany-style Lebenslauf in ${lang} for ${esc(S.name)||'candidate'} applying to ${S.profession} in ${S.city}. ${S.profession}, ${S.exp} yrs, skills: ${esc(S.skills)||'see bio'}. Email: ${S.email}. Mobile: ${S.mobile}. German: ${S.german}. Arriving: ${S.arrival}. Bio: ${esc(S.bio)}. Sections: PERSÖNLICHE DATEN / BERUFSZIEL / BERUFSERFAHRUNG / AUSBILDUNG / KENNTNISSE / SPRACHEN. Tailor to ${S.profession} in ${S.city}. 1-page.','ft-cv-out','ft-cv-lbl')">📄 Build Lebenslauf — ${S.profession}</button>
+    <button class="btn" onclick="callAI('Professional ${lang} cover letter for ${esc(S.name)||'candidate'} applying to ${S.profession} in ${S.city}. Skills: ${esc(S.skills)}. German: ${S.german}. ${S.exp} yrs exp. Chancenkarte arriving ${S.arrival||'soon'}. Max 250 words. ${S.city} and date header.','ft-cl-out','ft-cl-lbl')">✉ Cover letter</button>
+    <a href="https://www.arbeitsagentur.de/jobsuche/" target="_blank" class="btn">BA Jobbörse ↗</a>
     <a href="https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(S.profession)}&location=${encodeURIComponent(S.city+', Germany')}" target="_blank" class="btn">LinkedIn ↗</a>
+    <a href="https://www.randstad.de/jobs/" target="_blank" class="btn">Randstad jobs ↗</a>
   </div>
   <div id="ft-cv-lbl" class="ai-lbl">Lebenslauf — ${S.profession}</div>
   <div id="ft-cv-out" class="ai-box"></div>
   <div id="ft-cl-lbl" class="ai-lbl">Cover letter — Career</div>
   <div id="ft-cl-out" class="ai-box"></div>
+</div>
+<div class="card">
+  <div class="ct">Staffing agencies — verified, real, nationwide (no fee to candidates)</div>
+  <div style="font-size:11px;line-height:1.9">
+    <div><strong>Randstad</strong> — largest staffing agency in Germany, 390+ branches. HQ: +49 6196 408 0 · <a href="https://www.randstad.de/standorte/" target="_blank">find your nearest ${S.city} branch ↗</a></div>
+    <div><strong>Bundesagentur für Arbeit (official, government)</strong> — free hotline <strong>0800 4 5555 00</strong> · <a href="https://www.arbeitsagentur.de/jobsuche/" target="_blank">Jobbörse ↗</a></div>
+    <div><strong>Adecco</strong> — <a href="https://www.adecco.de/jobsuche/" target="_blank">job search ↗</a> · <strong>Manpower</strong> — <a href="https://www.manpower.de/stellenangebote" target="_blank">job search ↗</a></div>
+  </div>
 </div>`;}
 
-function rAccom(){const c=cd();return `
+function findPartTimeJobs(){const noG=S.german==='none';
+const p=`Search the web right now for real, currently active part-time survival jobs in ${S.city}, Germany suitable for someone with ${noG?'no German':S.german+' German'} on an Opportunity Card (Chancenkarte). Look at the Bundesagentur für Arbeit Jobbörse (arbeitsagentur.de/jobsuche), Indeed.de, StepStone.de, and Randstad/Adecco/Manpower job search for ${S.city} — categories: warehouse, delivery, kitchen helper, cleaning, retail, security, packing, hospitality. For each REAL listing found: job title, employer name, district in ${S.city}, pay €/hr if listed, hours/week if listed, German level needed, and the exact application URL from your search. List up to 6. Do not invent any phone number, email, or contact person that you did not see in a search result. If you find fewer than 6 genuine current listings, say so honestly.`;
+callAI(p,'pt-out','pt-lbl',{search:true,maxTokens:1800});}
+
+function findCareerJobs(){
+const c=cd();
+const p=`Search the web right now for real, currently active career job openings in ${S.city}, Germany for: ${S.profession}, ${S.exp} years experience, skills: ${esc(S.skills)||'general'}, German level: ${S.german}. Check company career pages of major ${S.city} employers (${c.major.join(', ')}), the Bundesagentur für Arbeit Jobbörse, LinkedIn Jobs, and StepStone.de. For each REAL listing found: job title, company name, district in ${S.city}, salary if listed, contract type, German required level, and the exact application URL from your search. List up to 6. Do not invent any phone number, email, or contact person that you did not see in a search result. If you find fewer than 6 genuine current listings, say so honestly.`;
+callAI(p,'ft-out','ft-lbl',{search:true,maxTokens:1800});}
+
+function rAccom(){const c=cd();
+return `
 <div class="pt">Accommodation — ${S.city}</div>
 <div class="ps">Housing in ${S.city} · Budget €${S.budget}/mo · Arriving ${S.arrival||'TBD'}</div>
 <div class="al al-i">Best areas in ${S.city}: ${c.areas.slice(0,5).join(', ')}. Typical rents — Hostel: ${c.hostel} · WG/Shared: ${c.wg} · Studio: ${c.studio}</div>
-${[
-  {id:'wg',t:`Shared flat (WG) — ${c.areas[0]} / ${c.areas[1]}`,type:'shared',cost:c.wg,km:'2–6',tags:['Bills often included','English-friendly','Furnished'],desc:`Private room in shared flat in ${S.city}. Best areas: ${c.areas.slice(0,4).join(', ')}. Good for meeting people while settling.`,url:'https://www.wg-gesucht.de'},
-  {id:'ho',t:`Worker hostel — ${c.areas[3]||c.areas[2]}`,type:'hostel',cost:c.hostel,km:'5–10',tags:['No German needed','Short-term OK','Flexible'],desc:`Worker hostel in ${S.city}. No long-term commitment. Ideal for first 1–3 months while finding permanent accommodation.`,url:'https://www.hotelscombined.com'},
-  {id:'st',t:`Studio apartment — central ${S.city}`,type:'studio',cost:c.studio,km:'1–4',tags:['Fully private','Central','Furnished'],desc:`Self-contained studio in ${S.city}. Private bathroom and kitchen. Best once income is established.`,url:'https://www.immobilienscout24.de'},
-  {id:'sf',t:`SAFE partner housing — ${S.city}`,type:'partner',cost:c.wg,km:'3–8',tags:['SAFE verified','English contract','Priority booking'],desc:`Pre-arranged rooms via SAFE verified landlords in ${S.city}. English contracts. Priority for SAFE Post Landing candidates.`,url:''},
-].map(a=>`
-<div class="ri${a.type==='partner'?' feat':''}">
-  <div style="font-size:12px;font-weight:700;color:var(--nv);margin-bottom:2px">${a.t}</div>
-  <div style="font-size:10px;color:var(--mu);margin-bottom:6px">📍 ${a.km} km from ${S.city} centre · Available from ${S.arrival||'TBD'}</div>
-  <div style="margin-bottom:7px">${bdg('#7a5c10','#f5eacc',a.cost+'/mo')}${a.tags.map(t=>bdg('#6b7a99','#edf0f7',t)).join('')}</div>
-  <div style="font-size:11px;margin-bottom:8px;line-height:1.5">${a.desc}</div>
-  <div style="display:flex;gap:6px;flex-wrap:wrap">
-    ${a.type==='partner'?'<button class="btn btn-g" onclick="toast(\'Booking request sent to SAFE team!\')">Book via SAFE</button>':''}
-    <button class="btn" onclick="callAI('Formal German rental enquiry for ${S.name||'candidate'}, Indian professional on Chancenkarte, arriving ${S.city} on ${S.arrival||'soon'}. Looking for ${a.type} accommodation. Budget €${S.budget}/mo. Reliable professional, medium-term stay. Under 120 words. Sehr geehrte greeting, Mit freundlichen Grüßen sign-off.','enq-${a.id}','enq-${a.id}-lbl')">✉ German enquiry</button>
-    ${a.url?`<a href="${a.url}" target="_blank" class="btn">Search listings ↗</a>`:''}
-    <button class="btn" onclick="copy('enq-${a.id}')">Copy</button>
+<div class="jbox jbox-ft">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+    <div>
+      <div class="jbox-t" style="color:var(--in)">🔎 Find real, current housing — ${S.city}</div>
+      <div class="jbox-s" style="color:#2a4aaa">Live web search for direct, commission-free (provisionsfrei) contacts within €${S.budget}/mo, checked at the moment you click — not stored data that can go stale</div>
+    </div>
+    <button class="btn btn-n" onclick="findHousing()">🔍 Search live housing in ${S.city}</button>
   </div>
-  <div id="enq-${a.id}-lbl" class="ai-lbl">Rental enquiry — German</div>
-  <div id="enq-${a.id}" class="ai-box"></div>
-</div>`).join('')}
-<button class="btn btn-g" style="margin-top:4px" onclick="callAI('Complete housing guide for Indian national on Chancenkarte arriving in ${S.city} on ${S.arrival||'soon'}. Budget €${S.budget}/mo. German: ${S.german}. Best neighbourhoods, rent ranges, what landlords require, tips for Indian nationals, common mistakes, how to find rooms before arrival. Be specific to ${S.city}.','hg-out','hg-lbl')">📋 Get full ${S.city} housing guide</button>
+  <div id="ac-lbl" class="ai-lbl">Live housing search — ${S.city}</div>
+  <div id="ac-out" class="ai-box"></div>
+</div>
+<div class="ri">
+  <div style="font-size:12px;font-weight:700;color:var(--nv);margin-bottom:2px">Generate a German rental enquiry</div>
+  <div style="font-size:11px;margin-bottom:8px;line-height:1.5">Once you have a real contact from the live search above (or from WG-Gesucht/ImmoScout24), generate a formal German enquiry email to send them.</div>
+  <button class="btn btn-g" onclick="callAI('Formal German rental enquiry email for ${esc(S.name)||'candidate'}, Indian professional on Chancenkarte, arriving ${S.city} on ${S.arrival||'soon'}. Budget €${S.budget}/mo. Reliable professional, medium-term stay. Under 120 words. Sehr geehrte greeting, Mit freundlichen Grüßen sign-off. Leave a blank for [Landlord name] and [Room/property].','enq-out','enq-lbl')">✉ Generate enquiry email</button>
+  <button class="btn" onclick="copy('enq-out')">Copy</button>
+  <div id="enq-lbl" class="ai-lbl">Rental enquiry — German</div>
+  <div id="enq-out" class="ai-box"></div>
+</div>
+<div class="ri feat">
+  <div style="font-size:12px;font-weight:700;color:var(--nv);margin-bottom:2px">SAFE partner housing — ${S.city}</div>
+  <div style="font-size:10px;color:var(--mu);margin-bottom:6px">Pre-arranged rooms via SAFE verified landlords · Priority for SAFE candidates</div>
+  <div style="margin-bottom:7px">${bdg('#7a5c10','#f5eacc',c.wg+'/mo')}${['SAFE verified','English contract','Priority booking'].map(t=>bdg('#6b7a99','#edf0f7',t)).join('')}</div>
+  <button class="btn btn-g" onclick="toast('Booking request sent to SAFE team!')">Book via SAFE</button>
+</div>
+<button class="btn btn-g" style="margin-top:4px" onclick="callAI('Search the web for the current official rules and best practice for accommodation in ${S.city}, Germany for an Indian national on Chancenkarte arriving ${S.arrival||'soon'}. Budget €${S.budget}/mo. German: ${S.german}. Cover: best neighbourhoods, what landlords require (Schufa, income proof, deposit), tips for Indian nationals, common mistakes, how to secure a room before arrival. Cite sources.','hg-out','hg-lbl')" >📋 Get full ${S.city} housing guide (live-checked)</button>
 <div id="hg-lbl" class="ai-lbl">${S.city} housing guide</div>
 <div id="hg-out" class="ai-box"></div>`;}
+
+function findHousing(){
+const c=cd();
+const p=`Search the web right now for real, currently available accommodation in ${S.city}, Germany for a newcomer on a Chancenkarte (Opportunity Card), budget up to €${S.budget}/mo, moving in around ${S.arrival||'soon'}. 
+Step 1: Search specifically for direct-contact, commission-free (provisionsfrei) landlords or room-rental companies in ${S.city} — try search terms like "WG ohne Provision ${S.city}", "Zimmer direkt vom Vermieter ${S.city}", "provisionsfrei Zimmer ${S.city}", "Wohnheim Arbeiter ${S.city}". These are the best results — a stable company or landlord with a persistent real phone/WhatsApp/email you can call today.
+Step 2: If you don't find enough direct-contact options, also check WG-Gesucht.de, ImmoScout24.de and Kleinanzeigen.de for ${S.city} and report what's currently listed, but for these tell the user to click through and contact via the portal rather than quoting a private individual's number as a long-term fact.
+For each option: name/type, area in ${S.city}, price, what's included, and the exact real contact (phone/WhatsApp/email/website) or listing URL exactly as found. Group into "Direct contact — no broker" vs "Portal listings (contact via portal)". Do not invent any contact detail. End with "Sources:" and the URLs used.`;
+callAI(p,'ac-out','ac-lbl',{search:true,maxTokens:1800});}
 
 function rBank(){const c=cd();
 return `
@@ -481,7 +541,7 @@ ${[
   <div style="font-size:11px;margin-bottom:8px;line-height:1.5">${b.desc}</div>
   <div style="display:flex;gap:6px;flex-wrap:wrap">
     <a href="${b.url}" target="_blank" class="btn${!b.anm?' btn-g':''}">Open ${b.nm} ↗</a>
-    <button class="btn" onclick="callAI('Exact documents and steps for ${S.name||'Indian national'} on Chancenkarte to open ${b.nm} in ${S.city}. German: ${S.german}. Numbered list with tips for Indian nationals.','bk-${b.id}','bk-${b.id}-lbl')">What do I need?</button>
+    <button class="btn" onclick="callAI('Exact documents and steps for ${esc(S.name)||'Indian national'} on Chancenkarte to open ${b.nm} in ${S.city}. German: ${S.german}. Numbered list with tips for Indian nationals.','bk-${b.id}','bk-${b.id}-lbl')">What do I need?</button>
   </div>
   <div id="bk-${b.id}-lbl" class="ai-lbl">SAFE advisor — ${b.nm}</div>
   <div id="bk-${b.id}" class="ai-box"></div>
@@ -504,7 +564,7 @@ function rAnm(){const c=cd();return `
     <div class="st">Prepare documents</div>
     <div class="sd">Passport · Opportunity Card · Wohnungsgeberbestätigung · Anmeldeformular. English staff at ${S.city} offices.</div>
     <div style="margin-top:8px">
-      <button class="btn btn-g" onclick="callAI('Generate a complete Wohnungsgeberbestätigung for tenant: ${S.name||'[Name]'}, passport: ${S.passport||'[Passport]'}, moving to ${S.city} on ${S.arrival||'[date]'}. Leave blanks for landlord name/address, property address, move-in date, signature, date. Formal German. WOHNUNGSGEBERBESTÄTIGUNG as header. All required legal fields.','lf-out','lf-lbl')">📄 Generate Wohnungsgeberbestätigung</button>
+      <button class="btn btn-g" onclick="callAI('Generate a complete Wohnungsgeberbestätigung for tenant: ${esc(S.name)||'[Name]'}, passport: ${S.passport||'[Passport]'}, moving to ${S.city} on ${S.arrival||'[date]'}. Leave blanks for landlord name/address, property address, move-in date, signature, date. Formal German. WOHNUNGSGEBERBESTÄTIGUNG as header. All required legal fields.','lf-out','lf-lbl')">📄 Generate Wohnungsgeberbestätigung</button>
     </div>
     <div id="lf-lbl" class="ai-lbl">Wohnungsgeberbestätigung — German</div>
     <div id="lf-out" class="ai-box"></div>
@@ -516,7 +576,7 @@ function rAnm(){const c=cd();return `
 <div class="card">
   <div class="ct">Ask SAFE — ${S.city} Anmeldung questions</div>
   <textarea id="anm-q" style="width:100%;border:1px solid var(--bd);border-radius:6px;padding:8px;font-size:12px;margin-bottom:8px;min-height:48px;outline:none;font-family:inherit" placeholder="E.g. Can I use a ${S.city} hostel address for Anmeldung? What documents exactly?"></textarea>
-  <button class="btn btn-g" onclick="const q=document.getElementById('anm-q').value;if(q.trim().length>3)callAI('Anmeldung question from ${S.name||'Indian national'} arriving ${S.city} on ${S.arrival||'soon'} on Chancenkarte: '+q+'. Practical answer specific to ${S.city}.','anm-a','anm-a-lbl')">Ask SAFE advisor</button>
+  <button class="btn btn-g" onclick="const q=document.getElementById('anm-q').value;if(q.trim().length>3)callAI('Anmeldung question from ${esc(S.name)||'Indian national'} arriving ${S.city} on ${S.arrival||'soon'} on Chancenkarte: '+q+'. Practical answer specific to ${S.city}.','anm-a','anm-a-lbl')">Ask SAFE advisor</button>
   <div id="anm-a-lbl" class="ai-lbl">SAFE legal advisor</div>
   <div id="anm-a" class="ai-box"></div>
 </div>`;}
@@ -577,7 +637,7 @@ ${mini?`<div class="al al-i">ℹ At ${S.hours} hrs/week, estimated income ~€${
     <div><strong>India–Germany DTA</strong> — prevents double taxation in both countries.</div>
   </div>
   <div style="margin-top:12px">
-    <button class="btn btn-g" onclick="callAI('German tax advice for ${S.name||'Indian national'} in ${S.city} on Chancenkarte. ${S.profession}, ${S.hours} hrs/week (~€${est}/mo). German: ${S.german}. Cover: Steuer-ID process in ${S.city}, Steuerklasse, Minijob rules, Lohnsteuer, Steuererklärung filing, India-Germany DTA benefits. Specific to ${S.city}.','tax-out','tax-lbl')">Get personalised tax advice for ${S.city}</button>
+    <button class="btn btn-g" onclick="callAI('German tax advice for ${esc(S.name)||'Indian national'} in ${S.city} on Chancenkarte. ${S.profession}, ${S.hours} hrs/week (~€${est}/mo). German: ${S.german}. Cover: Steuer-ID process in ${S.city}, Steuerklasse, Minijob rules, Lohnsteuer, Steuererklärung filing, India-Germany DTA benefits. Specific to ${S.city}.','tax-out','tax-lbl')">Get personalised tax advice for ${S.city}</button>
     <div id="tax-lbl" class="ai-lbl">SAFE tax advisor</div>
     <div id="tax-out" class="ai-box"></div>
   </div>
@@ -593,7 +653,7 @@ function rTracker(){const done=TASKS.filter(t=>t.done).length,pct=Math.round(don
 <div class="card">
 ${TASKS.map((t,i)=>`<div class="tr-row"><input type="checkbox" class="task-cb"${t.done?' checked':''} style="accent-color:var(--go);cursor:pointer;width:16px;height:16px"><span id="tr-s${i}" style="flex:1;font-size:12px;${t.done?'text-decoration:line-through;color:var(--mu)':''}">${t.label}</span></div>`).join('')}
 </div>
-<button class="btn btn-g" onclick="callAI('Week-by-week settlement timeline for ${S.name||'candidate'} arriving ${S.city} on ${S.arrival||'soon'} on Chancenkarte. ${S.profession}, German: ${S.german}, Budget: €${S.budget}/mo. Done: ${TASKS.filter(t=>t.done).map(t=>t.label).join(', ')||'none'}. Pending: ${TASKS.filter(t=>!t.done).map(t=>t.label).join(', ')}. Day-by-day for first 2 weeks in ${S.city}, weekly for 3 months. Include specific ${S.city} addresses and tips.','tr-out','tr-lbl')">📅 Get AI timeline for ${S.city}</button>
+<button class="btn btn-g" onclick="callAI('Week-by-week settlement timeline for ${esc(S.name)||'candidate'} arriving ${S.city} on ${S.arrival||'soon'} on Chancenkarte. ${S.profession}, German: ${S.german}, Budget: €${S.budget}/mo. Done: ${TASKS.filter(t=>t.done).map(t=>t.label).join(', ')||'none'}. Pending: ${TASKS.filter(t=>!t.done).map(t=>t.label).join(', ')}. Day-by-day for first 2 weeks in ${S.city}, weekly for 3 months. Include specific ${S.city} addresses and tips.','tr-out','tr-lbl')">📅 Get AI timeline for ${S.city}</button>
 <div id="tr-lbl" class="ai-lbl">Settlement timeline — ${S.city}</div>
 <div id="tr-out" class="ai-box"></div>`;}
 
